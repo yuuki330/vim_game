@@ -8,6 +8,7 @@
 - **Node.js** (バージョン14以上)
 - **npm** (Node.jsに同梱されています)
 - **React** (バージョン18以上)
+- **TypeScript** (バージョン4以上)
 - **Visual Studio Code** (推奨エディタ)
 
 ### 1.2 Node.jsとnpmのインストール確認
@@ -23,10 +24,10 @@ Node.jsがインストールされていない場合は、以下の手順でイ�
 2. LTSバージョンをダウンロードしてインストール
 
 ### 1.3 Reactプロジェクトの作成
-以下のコマンドで新しいReactプロジェクトを作成します：
+以下のコマンドで新しいReact + TypeScriptプロジェクトを作成します：
 
 ```bash
-npx create-react-app vim-learning-game
+npx create-react-app vim-learning-game --template typescript
 cd vim-learning-game
 ```
 
@@ -49,17 +50,17 @@ vim-learning-game/
 │   ├── index.html
 │   └── ...
 ├── src/
-│   ├── App.js
+│   ├── App.tsx
 │   ├── App.css
-│   ├── index.js
+│   ├── index.tsx
 │   └── ...
 ├── package.json
 └── ...
 ```
 
 ### 2.2 重要なファイルの説明
-- **src/index.js**: アプリケーションのエントリーポイント
-- **src/App.js**: メインのアプリケーションコンポーネント
+- **src/index.tsx**: アプリケーションのエントリーポイント
+- **src/App.tsx**: メインのアプリケーションコンポーネント
 - **public/index.html**: ルートHTMLファイル
 
 ### 2.3 コンポーネントの配置
@@ -68,11 +69,11 @@ vim-learning-game/
 ```
 src/
 ├── components/
-│   ├── Header.js
-│   ├── MainMenu.js
+│   ├── Header.tsx
+│   ├── MainMenu.tsx
 │   └── ...
-├── App.js
-└── index.js
+├── App.tsx
+└── index.tsx
 ```
 
 ## 3. 最初のコンポーネント作成
@@ -80,11 +81,11 @@ src/
 ### 3.1 関数コンポーネントの基本構造
 Reactの関数コンポーネントは以下のようになります：
 
-```jsx
-// src/components/Header.js
+```tsx
+// src/components/Header.tsx
 import React from 'react';
 
-const Header = () => {
+const Header: React.FC = () => {
   return (
     <header>
       <h1>Vim学習ゲーム</h1>
@@ -94,6 +95,8 @@ const Header = () => {
 
 export default Header;
 ```
+
+TypeScriptでは、コンポーネントの型を明示的に指定します。`React.FC`はFunction Componentの型で、コンポーネントの基本的な型定義を提供します。
 
 ### 3.2 JSXの基本
 JSXはJavaScriptの拡張構文で、HTMLのような構文でUIを記述できます：
@@ -110,8 +113,8 @@ const element = (
 ### 3.3 コンポーネントのインポート/エクスポート
 コンポーネントを使用するには、他のファイルからインポートする必要があります：
 
-```jsx
-// App.jsでHeaderコンポーネントを使用する場合
+```tsx
+// App.tsxでHeaderコンポーネントを使用する場合
 import Header from './components/Header';
 
 function App() {
@@ -121,7 +124,46 @@ function App() {
     </div>
   );
 }
+
+export default App;
 ```
+
+### 3.4 Propsの型定義
+TypeScriptの利点の一つは、Propsに型を定義できることです。これにより、コンポーネントに渡されるデータの型安全性が確保されます：
+
+```tsx
+// src/components/Button.tsx
+import React from 'react';
+
+// Propsの型定義
+interface ButtonProps {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary';
+  disabled?: boolean;
+}
+
+const Button: React.FC<ButtonProps> = ({ 
+  label, 
+  onClick, 
+  variant = 'primary', 
+  disabled = false 
+}) => {
+  return (
+    <button 
+      className={`button button-${variant}`}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {label}
+    </button>
+  );
+};
+
+export default Button;
+```
+
+このようにPropsに型を定義することで、コンポーネントを使用する際に間違った型のデータを渡すことを防ぎ、開発時のエラー検出が容易になります。
 
 ## 4. スタイリングの方法
 
@@ -160,13 +202,14 @@ export default Header;
 ## 5. 状態管理の基本
 
 ### 5.1 useStateフックの使い方
-コンポーネント内で状態を管理するにはuseStateフックを使用します：
+コンポーネント内で状態を管理するにはuseStateフックを使用します。TypeScriptでは、状態変数の型を明示的に指定できます：
 
-```jsx
+```tsx
 import React, { useState } from 'react';
 
-const Counter = () => {
-  const [count, setCount] = useState(0);
+const Counter: React.FC = () => {
+  // countの型をnumberとして明示的に指定
+  const [count, setCount] = useState<number>(0);
 
   const handleClick = () => {
     setCount(count + 1);
@@ -183,22 +226,88 @@ const Counter = () => {
 export default Counter;
 ```
 
-### 5.2 イベントハンドリング
-ユーザーの操作に応じて処理を行うには、イベントハンドラを設定します：
+型パラメータ`<number>`をuseStateに指定することで、count変数がnumber型であることを明示し、setCount関数にnumber以外の値を渡そうとした場合にコンパイルエラーが発生するようになります。
 
-```jsx
-const Button = () => {
-  const handleClick = () => {
-    alert('ボタンがクリックされました！');
+複雑なオブジェクトの状態を管理する場合も、インターフェースを定義して型安全性を確保できます：
+
+```tsx
+import React, { useState } from 'react';
+
+// ユーザー情報の型定義
+interface User {
+  name: string;
+  email: string;
+  level: number;
+}
+
+const UserProfile: React.FC = () => {
+  // userの型をUserインターフェースとして指定
+  const [user, setUser] = useState<User>({
+    name: '',
+    email: '',
+    level: 1
+  });
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUser({
+      ...user,
+      name: e.target.value
+    });
   };
 
   return (
-    <button onClick={handleClick}>
-      クリックしてください
-    </button>
+    <div>
+      <input 
+        type="text" 
+        value={user.name} 
+        onChange={handleNameChange} 
+        placeholder="名前を入力" 
+      />
+      <p>レベル: {user.level}</p>
+    </div>
   );
 };
+
+export default UserProfile;
 ```
+
+### 5.2 イベントハンドリング
+ユーザーの操作に応じて処理を行うには、イベントハンドラを設定します。TypeScriptでは、イベントオブジェクトの型を明示的に指定できます：
+
+```tsx
+import React, { useState } from 'react';
+
+const TextInput: React.FC = () => {
+  const [text, setText] = useState<string>('');
+
+  // イベントオブジェクトの型を明示的に指定
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setText(e.target.value);
+  };
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    alert(`入力されたテキスト: ${text}`);
+  };
+
+  return (
+    <div>
+      <input 
+        type="text" 
+        value={text} 
+        onChange={handleChange} 
+        placeholder="テキストを入力" 
+      />
+      <button onClick={handleClick}>
+        送信
+      </button>
+    </div>
+  );
+};
+
+export default TextInput;
+```
+
+イベントハンドラの引数に適切な型を指定することで、イベントオブジェクトのプロパティに安全にアクセスできるようになります。
 
 ## 6. コンポーネント実装手順
 
@@ -229,12 +338,25 @@ const Button = () => {
    - 必要に応じて調整
 
 ### 6.2 実装例：Buttonコンポーネント
-```jsx
-// src/components/Button.js
+```tsx
+// src/components/Button.tsx
 import React from 'react';
 import './Button.css';
 
-const Button = ({ label, onClick, variant = 'primary', disabled = false }) => {
+// Propsの型定義
+interface ButtonProps {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary';
+  disabled?: boolean;
+}
+
+const Button: React.FC<ButtonProps> = ({ 
+  label, 
+  onClick, 
+  variant = 'primary', 
+  disabled = false 
+}) => {
   return (
     <button 
       className={`button button-${variant}`}
@@ -276,5 +398,7 @@ export default Button;
   transform: none;
 }
 ```
+
+このButtonコンポーネントは、Propsの型定義により、labelがstring型、onClickが関数型であることを保証し、variantとdisabledのオプションも型安全に扱えます。
 
 このガイドに従って、1つずつコンポーネントを実装していきましょう。各コンポーネント実装後、ブラウザで表示を確認しながら開発を進めることができます。
